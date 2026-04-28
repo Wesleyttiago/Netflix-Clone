@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Netflix Clone</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico">
+
+  <!-- CSS externo -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════
+       OVERLAY: solicitação da API Key
+  ════════════════════════════════════ -->
+  <div class="api-overlay" id="apiOverlay">
+    <div class="api-box">
+      <span class="api-logo">NETFLIX</span>
+      <h2>Insira sua chave TMDB</h2>
+      <p>Para carregar filmes e trailers reais, você precisa de uma API Key gratuita do The Movie Database.</p>
+      <input class="api-input" id="apiInput" type="text" placeholder="Cole sua API Key aqui...">
+      <button class="api-submit" id="apiSubmit">Entrar</button>
+      <p class="api-note">
+        Não tem? <a href="https://www.themoviedb.org/settings/api" target="_blank">Crie grátis aqui →</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       NAVBAR
+  ════════════════════════════════════ -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar-left">
+      <span class="logo">NETFLIX</span>
+      <ul class="nav-links">
+        <li><a href="#">Início</a></li>
+        <li><a href="#">Séries</a></li>
+        <li><a href="#">Filmes</a></li>
+        <li><a href="#">Novidades</a></li>
+        <li><a href="#">Minha lista</a></li>
+      </ul>
+    </div>
+    <div class="navbar-right">
+      <!-- Campo de busca dinâmica -->
+      <div class="search-box" id="searchBox">
+        <button class="search-toggle" id="searchToggle">🔍</button>
+        <input class="search-input" id="searchInput" type="text" placeholder="Títulos, pessoas, gêneros">
+      </div>
+      <span class="nav-icon">🔔</span>
+      <div class="avatar">U</div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════
+       BILLBOARD (Hero / Destaque)
+  ════════════════════════════════════ -->
+  <section class="billboard" id="billboard">
+
+    <!-- Poster estático (fallback e início) -->
+    <div class="bill-poster" id="billPoster"></div>
+
+    <!-- Iframe do YouTube para autoplay do trailer -->
+    <iframe
+      id="billIframe"
+      class="bill-iframe"
+      frameborder="0"
+      allow="autoplay; encrypted-media"
+      allowfullscreen>
+    </iframe>
+
+    <!-- Gradiente sobre o vídeo/poster -->
+    <div class="bill-overlay"></div>
+
+    <!-- Conteúdo textual do destaque -->
+    <div class="bill-content">
+      <div class="bill-badge">⭐ &nbsp;Nº 1 no Brasil hoje</div>
+      <h1 class="bill-title" id="billTitle">Carregando...</h1>
+      <div class="bill-meta">
+        <span class="bill-match" id="billMatch"></span>
+        <span id="billYear"></span>
+      </div>
+      <p class="bill-desc" id="billDesc"></p>
+      <div class="bill-btns">
+        <button class="btn btn-play" id="billPlayBtn">▶ &nbsp;Assistir</button>
+        <button class="btn btn-info">ℹ &nbsp;Mais informações</button>
+      </div>
+    </div>
+
+    <!-- Classificação etária + botão mute -->
+    <div class="bill-side">
+      <div class="bill-age" id="billAge">14+</div>
+      <button class="bill-mute" id="muteBtn">🔇</button>
+    </div>
+
+  </section>
+
+  <!-- ═══════════════════════════════════
+       RESULTADOS DE BUSCA
+  ════════════════════════════════════ -->
+  <section class="search-results hidden" id="searchResults">
+    <h2 class="search-results-title">Resultados da busca</h2>
+    <div class="search-grid" id="searchGrid"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════
+       FILEIRAS DE FILMES / SÉRIES
+  ════════════════════════════════════ -->
+  <main class="rows" id="rows"></main>
+
+  <!-- Feedback toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- JavaScript externo -->
+  <script src="script.js"></script>
+
+</body>
+</html>

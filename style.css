@@ -77,12 +77,12 @@ img { display: block; max-width: 100%; }
 }
 
 .logo {
-  color: var(--red);
-  font-size: 28px;
-  font-weight: 900;
-  font-style: italic;
-  letter-spacing: -1px;
+  width: 100px;         /* Ajuste o tamanho para caber bem na barra */
+  height: auto;         /* Mantém a proporção */
+  cursor: pointer;
+  display: block;       /* Evita espaços indesejados embaixo da imagem */
 }
+
 
 .nav-links {
   display: flex;

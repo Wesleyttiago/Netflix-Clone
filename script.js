@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   NETFLIX CLONE — script.js (v3 — Infinite Slider + Hover Premium)
+   NETFLIX CLONE — script.js 
    1. Configurações e estado global
    2. Utilitários
    3. API TMDB

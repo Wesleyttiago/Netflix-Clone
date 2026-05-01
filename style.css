@@ -434,11 +434,7 @@ img { display: block; max-width: 100%; }
 /* ── 5. FILEIRAS E SLIDER ── */
 .rows {
   width: 100%;
-  padding: 0 4vw 80px;
-  /*
-    margin-top negativo agressivo puxa as fileiras CIMA, sobrepondo o billboard.
-    -220px garante densidade máxima entre billboard e primeira fileira.
-  */
+  padding: 0 -10vw 100px;
   margin-top: -220px;
   position: relative;
   z-index: 10;
@@ -446,51 +442,65 @@ img { display: block; max-width: 100%; }
   isolation: isolate;
 }
 
+
 .row {
   width: 100%;
-  margin-bottom: 3.5vw;  /* Compactação vertical: 3.5vw entre fileiras */
+  margin-bottom: 2vw;  /* Espaço vertical entre as categorias */
   position: relative;
   isolation: isolate;
   overflow: visible;
 }
 
 .row-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 0.5vw;  /* Distância mínima entre título e filmes */
-  padding: 0 4vw;
+  display: flex; 
+  align-items: flex-end; 
+  gap: 10px;
+  margin-bottom: 0.8vw; /* Distância precisa entre título e cards */
+  padding: 0 4vw;       /* Alinha o título com a Logo da Navbar */
 }
-.row-title { font-size: 1.4vw; font-weight: 700; color: #e5e5e5; }
+
+.row-title { 
+  font-size: 1.4vw; 
+  font-weight: 700; 
+  color: #e5e5e5; 
+  line-height: 1;
+}
 .row-explore {
   color: var(--red); font-size: 13px; font-weight: 600;
   opacity: 0; transition: opacity 0.2s; cursor: pointer;
 }
-.row:hover .row-explore { opacity: 1; }
+/* Garante que a fileira sob o mouse fique ACIMA das outras */
+.row:hover {
+  z-index: 100;
+}
 
-/*
-  SLIDER-WRAP — Full-width com expansão de hover preservada
-  overflow: visible → permite card expandido (scale 1.5) + card-info
-  clip-path: inset(-100px 0px -100px 0px) → clipa lateral (mantém horizontalidade)
-  sem cortar vertical (permite hover flutuante)
-*/
+/* O container principal não pode cortar o que sai dele */
+.rows {
+  overflow: visible !important;
+  isolation: auto; /* Permite que o z-index do hover funcione globalmente */
+}
+
+/* Ajuste o slider para não limitar a altura do card expandido */
+.slider-wrap {
+  overflow: visible !important;
+  clip-path: none !important; /* Temporário para teste, se sumir o corte, o problema era aqui */
+}
+
+.slider {
+  padding: 40px 4vw 120px; /* Aumente o padding inferior para o card ter espaço para crescer */
+}
 .slider-wrap {
   position: relative;
   overflow: visible;
-  padding: 0 4vw;  /* Respira nas laterais, mas encostar próximo às bordas */
-  clip-path: inset(-100px 0px -100px 0px);
+  padding: 0;
+  /* Libera o espaço para o card crescer no hover sem ser cortado pelas fileiras de cima/baixo */
+  clip-path: inset(-200px 0px -200px 0px); 
 }
 
-/*
-  SLIDER (track)
-  padding-top: espaço para o card escalar para CIMA (sobre o billboard).
-  padding-bottom: espaço para o card-info aparecer abaixo sem ser clipado.
-  Os valores são: altura_card × (scale - 1) / 2 = ~30% da altura do card.
-  Com scale(1.5) e cards de ~130px de altura → ~32px de cada lado.
-  Usamos 40px para folga.
-*/
 .slider {
   display: flex;
-  gap: 4px;  /* Gap mínimo entre cards */
-  padding: 40px 0 110px;      /* top: espaço p/ escalar; bottom: espaço p/ card-info */
+  gap: 4px;             /* Espaço mínimo entre os posters */
+  padding: 0 4vw;       /* O recuo lateral deve estar aqui para alinhar o primeiro card */
   will-change: transform;
 }
 
@@ -522,25 +532,7 @@ img { display: block; max-width: 100%; }
 .arrow-right { right: 0; border-radius: 4px 0 0 4px; }
 
 
-/* ══════════════════════════════════════════════════════════
-   ── 6. CARDS 16:9 — HOVER PREMIUM (refatorado v3) ──
-
-   TÉCNICA:
-   ─────────────────────────────────────────────────────────
-   • aspect-ratio 16/9 garante proporção sem altura fixa.
-   • scale(1.5) aplicado via transform no :hover.
-   • transform-origin dinâmico via data-pos:
-       [data-pos="first"] → left center
-       [data-pos="last"]  → right center
-       [data-pos="mid"]   → center center  (padrão)
-   • z-index do .card no hover: 50.
-     O .row pai é elevado via JS para z-index: 30, garantindo
-     que o card flutue sobre .rows vizinhas (z-index: 10 base).
-   • .card-info é um bloco sólido logo abaixo do card,
-     usando position:absolute top:100% + scaleY(0→1).
-     Nunca ocupa espaço no fluxo → sem layout shift.
-   ─────────────────────────────────────────────────────────
-══════════════════════════════════════════════════════════ */
+/* ── 6. CARDS 16:9 — HOVER PREMIUM */
 
 .card {
   position: relative;

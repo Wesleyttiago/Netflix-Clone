@@ -23,7 +23,7 @@
   --card-info-bg: #181818;
   --green:        #46d369;
   --card-radius:  4px;
-  --cols:         6;      /* alterado pelos breakpoints */
+  --cols:         5;      /* alterado pelos breakpoints */
 
   /* Curva de easing da Netflix */
   --ease-netflix: cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -86,6 +86,274 @@ img { display: block; max-width: 100%; }
 }
 .search-input::placeholder { color: var(--gray); }
 .search-box.open .search-input { width: 220px; padding: 0 8px; }
+
+/* ────────────────────────────────────────────────
+   3b. NAVBAR — DROPDOWNS (Notificações + Perfil)
+   ──────────────────────────────────────────────── */
+
+/* Container pai — posicionamento relativo p/ o painel absoluto */
+.nav-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Botão do sino */
+.nav-icon-btn {
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Trigger do perfil (avatar + seta) ── */
+.profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* Seta que gira 180° no hover */
+.profile-caret {
+  font-size: 11px;
+  color: var(--white);
+  transition: transform 0.3s var(--ease-netflix);
+  display: inline-block;
+  line-height: 1;
+}
+.nav-dropdown:hover .profile-caret,
+.nav-dropdown.open  .profile-caret {
+  transform: rotate(180deg);
+}
+
+/* ── Painel genérico de dropdown ── */
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 14px); /* gap entre ícone e painel */
+  right: 0;
+  background: #141414;
+  border: 1px solid #333;
+  border-radius: 4px;
+  min-width: 240px;
+  padding: 12px 0;
+  z-index: 200;
+
+  /* Oculto por padrão */
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition:
+    opacity    0.22s var(--ease-netflix),
+    transform  0.22s var(--ease-netflix);
+}
+
+/* Estado visível — ativado por :hover no pai ou classe .open (JS) */
+.nav-dropdown:hover .dropdown-panel,
+.nav-dropdown.open  .dropdown-panel {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ── Triângulo/seta indicador ── */
+..dropdown-panel::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  right: 18px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 10px solid rgba(255, 255, 255, 0.18);
+}
+.dropdown-panel::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 19px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 7px solid #141414;
+}
+
+/* Título de seção (ex: "Novidades") */
+.dropdown-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 14px 8px;
+}
+
+.nav-dropdown.notifications .dropdown-panel {
+  width: 400px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.notification-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.notification-item img {
+  width: 100px;
+  height: 75px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.notification-content {
+  flex: 1;
+  padding-left: 10px;
+}
+
+.nav-dropdown.profile .dropdown-panel {
+  min-width: 240px;
+  width: auto;
+}
+
+/* Itens de perfil */
+.profile-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: var(--white);
+}
+.profile-item:hover {
+  background: rgba(255,255,255,0.08);
+}
+.profile-option {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  color: var(--gray);
+  font-size: 13px;
+}
+.profile-option:hover {
+  background: rgba(255,255,255,0.08);
+  color: var(--white);
+}
+.profile-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+}
+.profile-avatar--red  { background: #d62828; }
+.profile-avatar--blue { background: #1f8ef1; }
+.profile-avatar--orange { background: #f39c12; }
+
+/* Divisor */
+.dropdown-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
+}
+
+.notification-title {
+  font-size: 14px;
+  color: var(--white);
+  margin: 0 0 4px 0;
+}
+.notification-time {
+  font-size: 12px;
+  color: var(--gray);
+}
+
+/* ── PAINEL DE NOTIFICAÇÕES ── */
+.notif-panel { min-width: 280px; }
+
+.notif-list { padding: 0; }
+
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.notif-item:hover { background: rgba(255, 255, 255, 0.07); }
+
+.notif-thumb {
+  width: 48px;
+  height: 27px; /* proporção 16:9 */
+  object-fit: cover;
+  border-radius: 2px;
+  background: var(--dark-gray);
+  flex-shrink: 0;
+}
+
+.notif-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0; /* permite text-overflow */
+}
+
+.notif-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-date {
+  font-size: 11px;
+  color: var(--gray);
+}
+
+/* Links de gerenciamento */
+.manage-list {
+  padding: 4px 0;
+}
+.manage-list li a {
+  display: block;
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #e5e5e5;
+  transition: color 0.15s;
+}
+.manage-list li a:hover { color: var(--white); }
+
+/* Botão "Sair da Netflix" */
+.signout-btn {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  color: var(--gray);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.signout-btn:hover { color: var(--white); }
 
 
 /* ── 4. BILLBOARD ── */
@@ -165,38 +433,33 @@ img { display: block; max-width: 100%; }
 
 /* ── 5. FILEIRAS E SLIDER ── */
 .rows {
-  padding: 0 0 80px;
+  width: 100%;
+  padding: 0 4% 80px;
   /*
     margin-top negativo puxa as fileiras para CIMA, sobrepondo o billboard.
-    -180px faz as thumbs "sentarem" no terço inferior do hero — idêntico à Netflix.
+    -280px faz as thumbs subirem ainda mais sobre o hero.
     Ajuste este valor se o billboard mudar de altura.
   */
-  margin-top: -180px;
+  margin-top: -280px;
   position: relative;
   z-index: 10;
-  /* overflow: visible em ambos os eixos para o hover não ser clipado */
   overflow: visible;
+  isolation: isolate;
 }
 
 .row {
-  margin-bottom: 3vw;
+  width: 100%;
+  margin-bottom: 1vw;
   position: relative;
-  /*
-    isolation: isolate cria um stacking context próprio para cada row.
-    Isso garante que o z-index do card em hover (50) seja resolvido
-    DENTRO da row, e que o JS possa elevar o .row inteiro via z-index
-    para flutuar sobre as rows vizinhas.
-    overflow: visible é essencial — sem ele o card cliparia nos limites da row.
-  */
   isolation: isolate;
   overflow: visible;
 }
 
 .row-header {
   display: flex; align-items: center; gap: 10px;
-  margin-bottom: 10px; padding: 0 4%;
+  margin-bottom: 0.5em; padding: 0 4%;
 }
-.row-title { font-size: 18px; font-weight: 700; color: #e5e5e5; }
+.row-title { font-size: 1.4vw; font-weight: 700; color: #e5e5e5; }
 .row-explore {
   color: var(--red); font-size: 13px; font-weight: 600;
   opacity: 0; transition: opacity 0.2s; cursor: pointer;
@@ -208,22 +471,12 @@ img { display: block; max-width: 100%; }
   overflow-x: hidden  → esconde ghost-cards nas bordas horizontais.
   overflow-y: visible → permite que o card expandido (scale 1.5) e o
                         card-info flutuem para cima/baixo sem ser cortados.
-  OBS: "overflow-x:hidden + overflow-y:visible" no mesmo elemento é
-  ignorado por alguns browsers; a solução é usar clip-path só no eixo X,
-  mas a forma mais confiável é deixar o próprio .row como contexto de clip.
-  Por isso movemos o overflow:hidden para o .row-clip (wrapper interno).
 */
 .slider-wrap {
   position: relative;
   overflow: visible;
-  padding: 0 48px;
-  /*
-    clip-path com Y negativo: esconde ghost-cards nas bordas (eixo X)
-    mas não clipa o hover (scale + card-info) no eixo Y.
-    O JS sobrescreve com inset(-200px 48px -200px 48px) via rAF.
-    Este valor de fallback garante que o clip-path exista desde o CSS.
-  */
-  clip-path: inset(-200px 48px -200px 48px);
+  padding: 0 16px;
+  clip-path: inset(-200px 0px -200px 0px);
 }
 
 /*
@@ -237,8 +490,13 @@ img { display: block; max-width: 100%; }
 .slider {
   display: flex;
   gap: 4px;
-  padding: 40px 0 72px;      /* top: espaço p/ escalar; bottom: espaço p/ card-info */
+  padding: 40px 0 110px;      /* top: espaço p/ escalar; bottom: espaço p/ card-info */
   will-change: transform;
+}
+
+.row-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px; padding: 0 4%;
 }
 
 /* Ghost cards (clones) — nunca devem receber hover */
@@ -250,11 +508,11 @@ img { display: block; max-width: 100%; }
 .arrow-btn {
   position: absolute;
   top: 0; bottom: 0;
-  width: 48px;
-  background: rgba(20,20,20,0.85);
+  width: 60px;
+  background: linear-gradient(to bottom, rgba(20,20,20,0.97), rgba(20,20,20,0.22), rgba(20,20,20,0.97));
   border: none;
   color: var(--white);
-  font-size: 36px;
+  font-size: 45px;
   z-index: 20;
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
@@ -262,6 +520,7 @@ img { display: block; max-width: 100%; }
   align-items: center;
   justify-content: center;
 }
+.row:hover .arrow-btn,
 .slider-wrap:hover .arrow-btn { opacity: 1; }
 .arrow-btn:hover { background: rgba(20,20,20,0.97); }
 .arrow-left  { left: 0;  border-radius: 0 4px 4px 0; }
@@ -316,10 +575,10 @@ img { display: block; max-width: 100%; }
 /* ── Estado de hover ── */
 .card:hover {
   transform: scale(1.5);
-  z-index: 50;
+  z-index: 9999;
   transition:
     transform 0.3s var(--ease-netflix) 0.2s,
-    z-index 0s 0.2s;               /* z-index sobe JUNTO com o scale */
+    z-index 0s 0.2s;
 }
 
 /* ── Thumbnail ── */
@@ -334,6 +593,48 @@ img { display: block; max-width: 100%; }
 .card:hover .card-thumb {
   /* Remove o arredondamento inferior para unir ao card-info */
   border-radius: var(--card-radius) var(--card-radius) 0 0;
+}
+
+.card-new {
+  position: absolute;
+  left: 8px; bottom: 8px;
+  background: var(--red);
+  color: var(--white);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 2px;
+  z-index: 5;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.top10-badge {
+  position: absolute;
+  right: 8px; top: 8px;
+  background: rgba(0,0,0,0.65);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 7px;
+  border-radius: 999px;
+  z-index: 5;
+}
+
+.watch-progress {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 0 0 var(--card-radius) var(--card-radius);
+  overflow: hidden;
+  z-index: 4;
+}
+.watch-progress div {
+  width: 58%;
+  height: 100%;
+  background: var(--red);
+  transition: width 0.3s ease;
 }
 
 /* ── Mini-trailer (iframe) ── */
@@ -401,17 +702,17 @@ img { display: block; max-width: 100%; }
 .icon-btn {
   width: 32px; height: 32px;
   border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.5);
-  background: transparent;
-  color: white;
+  border: 1px solid rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.03);
+  color: var(--white);
   display: flex; align-items: center; justify-content: center;
   font-size: 14px;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
   flex-shrink: 0;
 }
-.icon-btn:hover { border-color: white; background: rgba(255,255,255,0.1); }
-.icon-btn.play  { background: white; color: black; border: none; }
-.icon-btn.play:hover { background: rgba(255,255,255,0.85); }
+.icon-btn:hover { border-color: rgba(255,255,255,0.9); background: rgba(255,255,255,0.12); transform: translateY(-1px); }
+.icon-btn.play  { background: var(--white); color: black; border: none; }
+.icon-btn.play:hover { background: rgba(255,255,255,0.9); }
 
 /* ── Metadados ── */
 .card-title {

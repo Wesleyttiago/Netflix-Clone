@@ -151,7 +151,7 @@ function toggleMute() {
 /**
  * createCard — Cria o elemento .card completo.
  */
-function createCard(item, type = 'movie') {
+function createCard(item, type = 'movie', options = {}) {
   if (!item.backdrop_path) return null;
 
   const card     = document.createElement('div');
@@ -163,8 +163,16 @@ function createCard(item, type = 'movie') {
   const GENRES     = ['Ação', 'Drama', 'Comédia', 'Thriller', 'Ficção Científica', 'Romance'];
   const genreLabel = GENRES.slice(0, 2 + Math.floor(Math.random() * 2)).join(' • ');
 
+  const badgeNew = options.newRelease ? '<div class="card-new">Novidade</div>' : '';
+  const badgeTop = options.top10 ? '<div class="top10-badge">TOP 10</div>' : '';
+  const progressValue = options.continueWatching ? `${40 + Math.floor(Math.random() * 40)}%` : null;
+  const progress = options.continueWatching ? `<div class="watch-progress"><div style="width:${progressValue}"></div></div>` : '';
+
   card.innerHTML = `
+    ${badgeNew}
+    ${badgeTop}
     <img class="card-thumb" src="${IMG_W500}${item.backdrop_path}" alt="${title}" loading="lazy">
+    ${progress}
     <div class="card-info">
       <div class="card-actions">
         <button class="icon-btn play"                  title="Assistir">▶</button>
@@ -246,7 +254,7 @@ function createCard(item, type = 'movie') {
 /**
  * buildRow — Infinite Slider (clone sandwich)
  */
-function buildRow(title, items, type, container) {
+function buildRow(title, items, type, container, options = {}) {
   const row = document.createElement('div');
   row.className = 'row';
 
@@ -276,7 +284,10 @@ function buildRow(title, items, type, container) {
 
   /* — Cards originais — */
   const validItems = items.filter(i => i.backdrop_path);
-  const origCards  = validItems.map(i => createCard(i, type)).filter(Boolean);
+  const origCards  = validItems.map((i, index) => createCard(i, type, {
+    ...options,
+    top10: options.top10 && index < 10,
+  })).filter(Boolean);
   if (!origCards.length) return;
 
   /* — Clone sandwich —
@@ -498,6 +509,23 @@ function initNavbarScroll() {
   }, { passive: true });
 }
 
+/* ── 7b. DROPDOWN DELAY ── */
+
+function initDropdownDelay() {
+  const dropdownTimeouts = {};
+  document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+    dropdown.addEventListener('mouseenter', () => {
+      clearTimeout(dropdownTimeouts[dropdown]);
+      dropdown.classList.add('open');
+    });
+    dropdown.addEventListener('mouseleave', () => {
+      dropdownTimeouts[dropdown] = setTimeout(() => {
+        dropdown.classList.remove('open');
+      }, 300);
+    });
+  });
+}
+
 
 /* ── 8. INICIALIZAÇÃO ── */
 
@@ -507,24 +535,31 @@ async function init() {
   addSkeletonRows(rowsEl);
 
   try {
-    const [trending, popular, topTV, action, horror, comedy] = await Promise.all([
+    const [trending, popular, topTV, action, horror, comedy, animes, dramas, documentarios] = await Promise.all([
       tmdb('/trending/all/week?'),
       tmdb('/movie/popular?'),
       tmdb('/tv/top_rated?'),
       tmdb('/discover/movie?with_genres=28&sort_by=popularity.desc&'),
       tmdb('/discover/movie?with_genres=27&sort_by=popularity.desc&'),
       tmdb('/discover/movie?with_genres=35&sort_by=popularity.desc&'),
+      tmdb('/discover/movie?with_genres=16&sort_by=popularity.desc&'),
+      tmdb('/discover/movie?with_genres=18&sort_by=popularity.desc&'),
+      tmdb('/discover/movie?with_genres=99&sort_by=popularity.desc&'),
     ]);
 
     await loadBillboard(trending.results);
 
     rowsEl.innerHTML = '';
-    buildRow('🔥 Em Alta no Brasil', trending.results, 'movie',  rowsEl);
+    buildRow('🔥 Em Alta no Brasil', trending.results, 'movie',  rowsEl, { top10: true, newRelease: true });
+    buildRow('▶ Continuar assistindo como Wesley', popular.results.slice(0, 10), 'movie', rowsEl, { continueWatching: true });
     buildRow('🎬 Filmes Populares',  popular.results,  'movie',  rowsEl);
     buildRow('📺 Séries Premiadas',  topTV.results,    'tv',     rowsEl);
     buildRow('💥 Ação & Aventura',   action.results,   'movie',  rowsEl);
     buildRow('😱 Terror',            horror.results,   'movie',  rowsEl);
     buildRow('😂 Comédias',          comedy.results,   'movie',  rowsEl);
+    buildRow('🎭 Animes',            animes.results,   'movie',  rowsEl);
+    buildRow('🎭 Dramas',            dramas.results,   'movie',  rowsEl);
+    buildRow('📚 Documentários',     documentarios.results, 'movie', rowsEl);
 
   } catch (err) {
     console.error(err);
@@ -537,5 +572,6 @@ async function init() {
 /* ── EVENTOS GLOBAIS ── */
 document.getElementById('muteBtn').addEventListener('click', toggleMute);
 initNavbarScroll();
+initDropdownDelay();
 initSearch();
 window.addEventListener('DOMContentLoaded', init);

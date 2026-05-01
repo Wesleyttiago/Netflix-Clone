@@ -1,19 +1,17 @@
-/* ═══════════════════════════════════════════════════════════
-   NETFLIX CLONE — style.css
-   Organização:
+/*
+   NETFLIX CLONE — style.css (v3 — Hover Premium + Infinite Slider)
    1. Variáveis globais
    2. Reset & base
    3. Navbar
    4. Billboard
-   5. Fileiras (rows) e slider
-   6. Cards 16:9 com hover
+   5. Fileiras e slider
+   6. Cards 16:9 — hover premium  ← refatorado
    7. Busca dinâmica
    8. Skeleton loading
    9. Overlay API Key
    10. Toast
    11. Responsividade
-═══════════════════════════════════════════════════════════ */
-
+*/
 
 /* ── 1. VARIÁVEIS GLOBAIS ── */
 :root {
@@ -25,31 +23,25 @@
   --card-info-bg: #181818;
   --green:        #46d369;
   --card-radius:  4px;
-  --transition:   0.3s ease;
-}
+  --cols:         6;      /* alterado pelos breakpoints */
 
+  /* Curva de easing da Netflix */
+  --ease-netflix: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
 
 /* ── 2. RESET & BASE ── */
-*, *::before, *::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-
 body {
   background: var(--bg);
   color: var(--white);
   font-family: 'Netflix Sans', 'Helvetica Neue', Arial, sans-serif;
   overflow-x: hidden;
 }
-
 a { color: inherit; text-decoration: none; }
 ul { list-style: none; }
 button { cursor: pointer; }
 img { display: block; max-width: 100%; }
-
 
 /* ── 3. NAVBAR ── */
 .navbar {
@@ -64,517 +56,416 @@ img { display: block; max-width: 100%; }
   background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
   transition: background 0.4s;
 }
+.navbar.solid { background: #141414; }
 
-/* Navbar fica sólida ao scrollar (classe adicionada via JS) */
-.navbar.solid {
-  background: #141414;
-}
-
-.navbar-left {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-}
-
-.logo {
-  width: 100px;         /* Ajuste o tamanho para caber bem na barra */
-  height: auto;         /* Mantém a proporção */
-  cursor: pointer;
-  display: block;       /* Evita espaços indesejados embaixo da imagem */
-}
-
-
-.nav-links {
-  display: flex;
-  gap: 20px;
-}
-
-.nav-links a {
-  color: #e5e5e5;
-  font-size: 13px;
-  transition: color 0.2s;
-}
-
+.navbar-left { display: flex; align-items: center; gap: 28px; }
+.logo { width: 100px; height: auto; cursor: pointer; display: block; }
+.nav-links { display: flex; gap: 20px; }
+.nav-links a { color: #e5e5e5; font-size: 13px; transition: color 0.2s; }
 .nav-links a:hover { color: var(--white); }
 
-.navbar-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
+.navbar-right { display: flex; align-items: center; gap: 16px; }
 .nav-icon { font-size: 20px; cursor: pointer; }
-
 .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  background: var(--red);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
+  width: 32px; height: 32px; border-radius: 4px;
+  background: var(--red); display: flex; align-items: center;
+  justify-content: center; font-size: 13px; font-weight: 700; cursor: pointer;
 }
 
-/* Campo de busca expansível */
 .search-box {
-  display: flex;
-  align-items: center;
+  display: flex; align-items: center;
   border: 1px solid transparent;
   transition: border 0.3s, background 0.3s;
-  padding: 4px 8px;
-  border-radius: 2px;
+  padding: 4px 8px; border-radius: 2px;
 }
-
-.search-box.open {
-  background: rgba(0,0,0,0.75);
-  border-color: var(--white);
-}
-
-.search-toggle {
-  background: none;
-  border: none;
-  color: var(--white);
-  font-size: 18px;
-}
-
+.search-box.open { background: rgba(0,0,0,0.75); border-color: var(--white); }
+.search-toggle { background: none; border: none; color: var(--white); font-size: 18px; }
 .search-input {
-  width: 0;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--white);
-  font-size: 14px;
-  transition: width 0.3s;
-  padding: 0;
+  width: 0; background: transparent; border: none; outline: none;
+  color: var(--white); font-size: 14px; transition: width 0.3s; padding: 0;
 }
-
 .search-input::placeholder { color: var(--gray); }
-
-.search-box.open .search-input {
-  width: 220px;
-  padding: 0 8px;
-}
+.search-box.open .search-input { width: 220px; padding: 0 8px; }
 
 
 /* ── 4. BILLBOARD ── */
 .billboard {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  background: #000;
+  position: relative; width: 100%; height: 100vh;
+  background: #000; overflow: hidden;
 }
-
-/* Poster estático (aparece antes do vídeo carregar) */
 .bill-poster {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center top;
-  transition: opacity 1.5s;
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center top;
+  transition: opacity 1s ease; z-index: 1;
 }
-
-/* Iframe do YouTube — ocupa toda a billboard */
 .bill-iframe {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;  /* não captura cliques */
-  opacity: 0;
-  transition: opacity 1.5s;
-  transform: scale(1.05); /* evita bordas pretas nas laterais */
+  position: absolute; top: 50%; left: 50%;
+  width: max(100%, 177.78vh);
+  height: max(56.25vw, 100%);
+  transform: translate(-50%, -50%);
+  pointer-events: none; opacity: 0;
+  transition: opacity 1.5s; z-index: 1;
 }
-
-/* Classe adicionada via JS quando o iframe estiver pronto */
 .bill-iframe.visible { opacity: 1; }
 
-/*
-  GRADIENTE DA BILLBOARD:
-  - Horizontal: escurece a esquerda (onde fica o texto)
-  - Vertical: funde o rodapé com o fundo da página (#141414)
-*/
 .bill-overlay {
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0; z-index: 2;
   background:
-    linear-gradient(to right,  rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 75%),
-    linear-gradient(to top,    #141414 0%,          transparent 35%);
+    linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 55%, transparent 75%),
+    linear-gradient(to top, #141414 0%, transparent 35%);
 }
-
 .bill-content {
-  position: absolute;
-  bottom: 32%;
-  left: 4%;
-  max-width: 520px;
+  position: absolute; bottom: 32%; left: 4%;
+  max-width: 520px; z-index: 3;
 }
-
 .bill-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.3);
-  padding: 3px 12px;
-  border-radius: 3px;
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3);
+  padding: 3px 12px; border-radius: 3px; font-size: 13px;
+  font-weight: 600; margin-bottom: 14px;
 }
-
 .bill-title {
-  font-size: clamp(32px, 5vw, 64px); /* responsivo: mínimo 32px, ideal 5vw, máximo 64px */
-  font-weight: 800;
-  line-height: 1.05;
-  margin-bottom: 18px;
+  font-size: clamp(32px, 5vw, 64px); font-weight: 800;
+  line-height: 1.05; margin-bottom: 18px;
   text-shadow: 2px 2px 8px rgba(0,0,0,0.6);
 }
-
-.bill-meta {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  font-size: 14px;
-  margin-bottom: 16px;
-}
-
-.bill-match {
-  color: var(--green);
-  font-weight: 700;
-}
-
+.bill-meta { display: flex; gap: 12px; align-items: center; font-size: 14px; margin-bottom: 16px; }
+.bill-match { color: var(--green); font-weight: 700; }
 .bill-desc {
-  font-size: 15px;
-  line-height: 1.6;
-  color: #d2d2d2;
-  margin-bottom: 22px;
-  /* Limita a 3 linhas */
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 15px; line-height: 1.6; color: #d2d2d2; margin-bottom: 22px;
+  display: -webkit-box; -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical; overflow: hidden;
 }
+.bill-btns { display: flex; gap: 12px; flex-wrap: wrap; }
 
-.bill-btns {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-/* Botões da billboard */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 26px;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 700;
-  border: none;
-  transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 26px; border-radius: 4px;
+  font-size: 16px; font-weight: 700; border: none; transition: all 0.2s;
 }
-
-.btn-play {
-  background: var(--white);
-  color: #000;
-}
+.btn-play { background: var(--white); color: #000; }
 .btn-play:hover { background: rgba(255,255,255,0.8); }
-
-.btn-info {
-  background: rgba(109,109,110,0.7);
-  color: var(--white);
-}
+.btn-info { background: rgba(109,109,110,0.7); color: var(--white); }
 .btn-info:hover { background: rgba(109,109,110,0.5); }
 
-/* Controles à direita da billboard (age + mute) */
 .bill-side {
-  position: absolute;
-  bottom: 34%;
-  right: 4%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  position: absolute; bottom: 34%; right: 4%;
+  display: flex; align-items: center; gap: 12px; z-index: 3;
 }
-
-.bill-age {
-  border-left: 3px solid var(--gray);
-  padding: 4px 12px;
-  font-size: 16px;
-  color: #ddd;
-}
-
+.bill-age { border-left: 3px solid var(--gray); padding: 4px 12px; font-size: 16px; color: #ddd; }
 .bill-mute {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.6);
-  background: transparent;
-  color: var(--white);
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.6); background: transparent;
+  color: var(--white); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
   transition: border-color 0.2s;
 }
 .bill-mute:hover { border-color: var(--white); }
 
 
-/* ── 5. FILEIRAS (ROWS) E SLIDER ── */
+/* ── 5. FILEIRAS E SLIDER ── */
 .rows {
-  padding: 0 4% 80px;
-  margin-top: -120px; /* sobe sobre o gradiente da billboard */
+  padding: 0 0 80px;
+  /*
+    margin-top negativo puxa as fileiras para CIMA, sobrepondo o billboard.
+    -180px faz as thumbs "sentarem" no terço inferior do hero — idêntico à Netflix.
+    Ajuste este valor se o billboard mudar de altura.
+  */
+  margin-top: -180px;
   position: relative;
   z-index: 10;
+  /* overflow: visible em ambos os eixos para o hover não ser clipado */
+  overflow: visible;
 }
 
-.row { margin-bottom: 3vw; }
+.row {
+  margin-bottom: 3vw;
+  position: relative;
+  /*
+    isolation: isolate cria um stacking context próprio para cada row.
+    Isso garante que o z-index do card em hover (50) seja resolvido
+    DENTRO da row, e que o JS possa elevar o .row inteiro via z-index
+    para flutuar sobre as rows vizinhas.
+    overflow: visible é essencial — sem ele o card cliparia nos limites da row.
+  */
+  isolation: isolate;
+  overflow: visible;
+}
 
 .row-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px; padding: 0 4%;
 }
-
-.row-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #e5e5e5;
-}
-
-/* "Explorar tudo" aparece só no hover da row */
+.row-title { font-size: 18px; font-weight: 700; color: #e5e5e5; }
 .row-explore {
-  color: var(--red);
-  font-size: 13px;
-  font-weight: 600;
-  opacity: 0;
-  transition: opacity 0.2s;
-  cursor: pointer;
+  color: var(--red); font-size: 13px; font-weight: 600;
+  opacity: 0; transition: opacity 0.2s; cursor: pointer;
 }
 .row:hover .row-explore { opacity: 1; }
 
-/* Container do slider */
-.slider-wrap { position: relative; }
+/*
+  SLIDER-WRAP
+  overflow-x: hidden  → esconde ghost-cards nas bordas horizontais.
+  overflow-y: visible → permite que o card expandido (scale 1.5) e o
+                        card-info flutuem para cima/baixo sem ser cortados.
+  OBS: "overflow-x:hidden + overflow-y:visible" no mesmo elemento é
+  ignorado por alguns browsers; a solução é usar clip-path só no eixo X,
+  mas a forma mais confiável é deixar o próprio .row como contexto de clip.
+  Por isso movemos o overflow:hidden para o .row-clip (wrapper interno).
+*/
+.slider-wrap {
+  position: relative;
+  overflow: visible;
+  padding: 0 48px;
+  /*
+    clip-path com Y negativo: esconde ghost-cards nas bordas (eixo X)
+    mas não clipa o hover (scale + card-info) no eixo Y.
+    O JS sobrescreve com inset(-200px 48px -200px 48px) via rAF.
+    Este valor de fallback garante que o clip-path exista desde o CSS.
+  */
+  clip-path: inset(-200px 48px -200px 48px);
+}
 
 /*
-  CSS GRID para os cards:
-  repeat(6, 1fr) = 6 colunas de tamanho igual
-  O número de colunas muda no responsivo
+  SLIDER (track)
+  padding-top: espaço para o card escalar para CIMA (sobre o billboard).
+  padding-bottom: espaço para o card-info aparecer abaixo sem ser clipado.
+  Os valores são: altura_card × (scale - 1) / 2 = ~30% da altura do card.
+  Com scale(1.5) e cards de ~130px de altura → ~32px de cada lado.
+  Usamos 40px para folga.
 */
 .slider {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  display: flex;
   gap: 4px;
-  transition: transform 0.4s ease;
+  padding: 40px 0 72px;      /* top: espaço p/ escalar; bottom: espaço p/ card-info */
   will-change: transform;
 }
 
-/* Botões de navegação do slider */
+/* Ghost cards (clones) — nunca devem receber hover */
+.slider .card[data-ghost] {
+  pointer-events: none;
+}
+
+/* Setas */
 .arrow-btn {
   position: absolute;
   top: 0; bottom: 0;
   width: 48px;
-  background: rgba(20,20,20,0.8);
+  background: rgba(20,20,20,0.85);
   border: none;
   color: var(--white);
-  font-size: 28px;
-  z-index: 5;
+  font-size: 36px;
+  z-index: 20;
   opacity: 0;
   transition: opacity 0.2s, background 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 .slider-wrap:hover .arrow-btn { opacity: 1; }
-.arrow-btn:hover { background: rgba(20,20,20,0.95); }
+.arrow-btn:hover { background: rgba(20,20,20,0.97); }
 .arrow-left  { left: 0;  border-radius: 0 4px 4px 0; }
 .arrow-right { right: 0; border-radius: 4px 0 0 4px; }
 
 
-/* ── 6. CARDS 16:9 COM HOVER ── */
+/* ══════════════════════════════════════════════════════════
+   ── 6. CARDS 16:9 — HOVER PREMIUM (refatorado v3) ──
+
+   TÉCNICA:
+   ─────────────────────────────────────────────────────────
+   • aspect-ratio 16/9 garante proporção sem altura fixa.
+   • scale(1.5) aplicado via transform no :hover.
+   • transform-origin dinâmico via data-pos:
+       [data-pos="first"] → left center
+       [data-pos="last"]  → right center
+       [data-pos="mid"]   → center center  (padrão)
+   • z-index do .card no hover: 50.
+     O .row pai é elevado via JS para z-index: 30, garantindo
+     que o card flutue sobre .rows vizinhas (z-index: 10 base).
+   • .card-info é um bloco sólido logo abaixo do card,
+     usando position:absolute top:100% + scaleY(0→1).
+     Nunca ocupa espaço no fluxo → sem layout shift.
+   ─────────────────────────────────────────────────────────
+══════════════════════════════════════════════════════════ */
+
 .card {
   position: relative;
-  aspect-ratio: 16 / 9; /* formato wide, igual Netflix */
+  flex: 0 0 calc((100% / var(--cols)) - 4px);
+  aspect-ratio: 16 / 9;
   border-radius: var(--card-radius);
-  overflow: visible;    /* permite o painel de detalhes "vazar" para baixo */
   cursor: pointer;
   z-index: 1;
 
-  /* Transição padrão (sem delay) */
-  transition: transform var(--transition), z-index 0s var(--transition);
+  /*
+    transition delay de 200ms no mouseenter:
+    evita acionar o efeito em mouse-overs rápidos (passa pelo card sem intenção).
+    No mouseleave (saída), sem delay para o retorno ser imediato.
+  */
+  transition:
+    transform 0.3s var(--ease-netflix) 0.2s,
+    z-index 0s 0.5s;               /* z-index volta APÓS animação de saída */
+
+  transform-origin: center center; /* padrão — sobrescrito por data-pos */
 }
 
-/*
-  EFEITO HOVER DO CARD:
-  - scale(1.4) = expande 40%
-  - z-index: 20 = fica na frente dos outros cards
-  - delay de 0.2s = só expande depois de o mouse ficar parado um pouco
-*/
+/* ── Transform-origin dinâmico via data-pos ── */
+.card[data-pos="first"] { transform-origin: left center; }
+.card[data-pos="last"]  { transform-origin: right center; }
+.card[data-pos="mid"]   { transform-origin: center center; }
+
+/* ── Estado de hover ── */
 .card:hover {
-  transform: scale(1.4);
-  z-index: 20;
-  transition: transform var(--transition) 0.2s, z-index 0s 0.2s;
+  transform: scale(1.5);
+  z-index: 50;
+  transition:
+    transform 0.3s var(--ease-netflix) 0.2s,
+    z-index 0s 0.2s;               /* z-index sobe JUNTO com o scale */
 }
 
-/* Ajuste de origem para cards nas bordas */
-.card:first-child:hover { transform-origin: left center; }
-.card:last-child:hover  { transform-origin: right center; }
-
-/* Thumbnail do card */
+/* ── Thumbnail ── */
 .card-thumb {
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
   border-radius: var(--card-radius);
   object-fit: cover;
   background: var(--dark-gray);
+  display: block;
+  transition: border-radius 0.15s;
 }
-
-/* No hover, remove o radius de baixo para o painel de detalhes encaixar */
 .card:hover .card-thumb {
+  /* Remove o arredondamento inferior para unir ao card-info */
   border-radius: var(--card-radius) var(--card-radius) 0 0;
 }
 
-/* Mini-trailer (iframe do YouTube) sobreposto ao card */
+/* ── Mini-trailer (iframe) ── */
 .card-video {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 100%; height: 100%;
+  border: none;
   border-radius: var(--card-radius) var(--card-radius) 0 0;
   opacity: 0;
   transition: opacity 0.5s;
   pointer-events: none;
   z-index: 2;
 }
-.card:hover .card-video { opacity: 1; }
 
-/*
-  PAINEL DE DETALHES:
-  - Aparece abaixo do card no hover
-  - Usa scaleY(0) → scaleY(1) para animação de "abrir"
-  - transform-origin: top = cresce para baixo
-*/
+/* ══════════════════════════════════════════════════════════
+   CARD-INFO — painel sólido unido à base do card
+   ──────────────────────────────────────────────────────────
+   • position: absolute + top: 100% → fica imediatamente abaixo
+     do card sem empurrar o layout.
+   • scaleY(0 → 1) com transform-origin: top → expande de cima
+     para baixo, "nascendo" da borda inferior do card.
+   • O fundo #181818 é contínuo com a thumb (sem gap visível),
+     criando a ilusão de um único bloco expandido.
+   • box-shadow cria a sombra de profundidade Netflix-like.
+   • z-index: 51 → acima do próprio card (50) durante o hover.
+══════════════════════════════════════════════════════════ */
 .card-info {
   position: absolute;
+  top: 100%;
   left: 0; right: 0;
-  top: 100%; /* posicionado logo abaixo do card */
   background: var(--card-info-bg);
+  padding: 12px 12px 14px;
   border-radius: 0 0 var(--card-radius) var(--card-radius);
-  padding: 10px 12px 14px;
+
+  /* Animação: colapsa verticalmente em repouso */
   transform: scaleY(0);
   transform-origin: top;
-  transition: transform 0.25s ease 0.15s;
-  pointer-events: none;
-  z-index: 21;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.8);
+  transition: transform 0.25s var(--ease-netflix) 0.2s;
+
+  box-shadow:
+    0 6px 12px rgba(0,0,0,0.5),
+    0 16px 32px rgba(0,0,0,0.4);
+
+  pointer-events: none;  /* sem hover acidental em repouso */
+  z-index: 51;
 }
+
 .card:hover .card-info {
   transform: scaleY(1);
   pointer-events: auto;
 }
 
-/* Botões de ação dentro do painel */
+/* ── Botões de ação ── */
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
+/* "Mais informações" empurrado para a direita */
+.card-actions .icon-btn.ml { margin-left: auto; }
+
 .icon-btn {
-  width: 30px;
-  height: 30px;
+  width: 32px; height: 32px;
   border-radius: 50%;
   border: 2px solid rgba(255,255,255,0.5);
   background: transparent;
-  color: var(--white);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
   font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
 }
-.icon-btn:hover { border-color: var(--white); }
-.icon-btn.play { background: var(--white); color: #000; border-color: var(--white); font-size: 16px; }
-.icon-btn.ml   { margin-left: auto; }
+.icon-btn:hover { border-color: white; background: rgba(255,255,255,0.1); }
+.icon-btn.play  { background: white; color: black; border: none; }
+.icon-btn.play:hover { background: rgba(255,255,255,0.85); }
 
+/* ── Metadados ── */
 .card-title {
-  font-size: 11px;
-  font-weight: 700;
-  margin-bottom: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 13px; font-weight: 700;
+  margin-bottom: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .card-badges {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
+  display: flex; gap: 6px; align-items: center;
+  font-size: 11px; flex-wrap: wrap;
 }
+.badge-match  { color: var(--green); font-weight: 700; }
+.badge        { border: 1px solid #808080; padding: 0 4px; border-radius: 2px; font-size: 10px; }
+.badge-year   { font-size: 10px; color: var(--gray); }
 
-.badge-match { color: var(--green); font-size: 11px; font-weight: 700; }
-.badge       { border: 1px solid var(--gray); padding: 0 4px; font-size: 10px; color: var(--gray); border-radius: 2px; }
-
-.card-genres { margin-top: 5px; font-size: 10px; color: var(--gray); }
+.card-genres {
+  margin-top: 8px;
+  font-size: 11px; color: #808080;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 
 /* ── 7. BUSCA DINÂMICA ── */
-.search-results {
-  padding: 90px 4% 40px;
-  position: relative;
-  z-index: 10;
-}
-
+.search-results { padding: 90px 4% 40px; position: relative; z-index: 10; }
 .search-results.hidden { display: none; }
-
-.search-results-title {
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 20px;
-  color: var(--gray);
-}
-
+.search-results-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: var(--gray); }
 .search-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 6px;
 }
-
 .search-card {
-  aspect-ratio: 16 / 9;
-  border-radius: var(--card-radius);
-  overflow: hidden;
-  cursor: pointer;
-  position: relative;
-  transition: transform 0.3s;
+  aspect-ratio: 16 / 9; border-radius: var(--card-radius);
+  overflow: hidden; cursor: pointer; position: relative; transition: transform 0.3s;
 }
 .search-card:hover { transform: scale(1.05); }
 .search-card img { width: 100%; height: 100%; object-fit: cover; }
 .search-card-title {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
+  position: absolute; bottom: 0; left: 0; right: 0;
   background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-  padding: 20px 8px 8px;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 20px 8px 8px; font-size: 12px; font-weight: 700;
 }
 
 
 /* ── 8. SKELETON LOADING ── */
 .skeleton {
+  flex: 0 0 calc((100% / var(--cols)) - 4px);
   aspect-ratio: 16 / 9;
   border-radius: var(--card-radius);
   background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
-
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -583,70 +474,34 @@ img { display: block; max-width: 100%; }
 
 /* ── 9. OVERLAY API KEY ── */
 .api-overlay {
-  position: fixed;
-  inset: 0;
+  position: fixed; inset: 0;
   background: rgba(0,0,0,0.96);
   z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
 }
-
 .api-box {
-  background: #1a1a1a;
-  border-radius: 8px;
-  padding: 48px 40px;
-  max-width: 440px;
-  width: 100%;
-  text-align: center;
+  background: #1a1a1a; border-radius: 8px;
+  padding: 48px 40px; max-width: 440px; width: 100%; text-align: center;
 }
-
 .api-logo {
-  color: var(--red);
-  font-size: 42px;
-  font-weight: 900;
-  font-style: italic;
-  display: block;
-  margin-bottom: 24px;
+  color: var(--red); font-size: 42px; font-weight: 900;
+  font-style: italic; display: block; margin-bottom: 24px;
 }
-
 .api-box h2 { font-size: 22px; margin-bottom: 10px; }
-
-.api-box p {
-  font-size: 14px;
-  color: var(--gray);
-  margin-bottom: 24px;
-  line-height: 1.6;
-}
-
+.api-box p  { font-size: 14px; color: var(--gray); margin-bottom: 24px; line-height: 1.6; }
 .api-input {
-  width: 100%;
-  padding: 14px 16px;
-  background: #333;
-  border: 1px solid #555;
-  border-radius: 4px;
-  color: var(--white);
-  font-size: 14px;
-  margin-bottom: 14px;
-  outline: none;
-  transition: border-color 0.2s;
+  width: 100%; padding: 14px 16px; background: #333;
+  border: 1px solid #555; border-radius: 4px;
+  color: var(--white); font-size: 14px; margin-bottom: 14px;
+  outline: none; transition: border-color 0.2s;
 }
 .api-input:focus { border-color: var(--red); }
-
 .api-submit {
-  width: 100%;
-  padding: 14px;
-  background: var(--red);
-  color: var(--white);
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  font-weight: 700;
-  transition: background 0.2s;
+  width: 100%; padding: 14px; background: var(--red);
+  color: var(--white); border: none; border-radius: 4px;
+  font-size: 16px; font-weight: 700; transition: background 0.2s;
 }
 .api-submit:hover { background: #f40612; }
-
 .api-note { font-size: 12px; color: var(--gray); margin-top: 14px; }
 .api-note a { color: var(--red); }
 .api-note a:hover { text-decoration: underline; }
@@ -654,46 +509,43 @@ img { display: block; max-width: 100%; }
 
 /* ── 10. TOAST ── */
 .toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-  background: #333;
-  color: var(--white);
-  padding: 12px 20px;
-  border-radius: 4px;
-  font-size: 13px;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: #333; color: var(--white);
+  padding: 12px 20px; border-radius: 4px;
+  font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
 }
 .toast.show { opacity: 1; }
 
 
 /* ── 11. RESPONSIVIDADE ── */
 
-/* Telas grandes: 5 colunas */
+/* Desktop médio: 5 colunas */
 @media (max-width: 1200px) {
-  .slider { grid-template-columns: repeat(5, 1fr); }
+  :root { --cols: 5; }
 }
 
-/* Tablets: 4 colunas, esconde nav-links */
+/* Tablet: 4 colunas */
 @media (max-width: 900px) {
-  .slider { grid-template-columns: repeat(4, 1fr); }
+  :root { --cols: 4; }
   .nav-links { display: none; }
   .row-title { font-size: 15px; }
+  .card:hover { transform: scale(1.3); } /* scale menor em tablet */
 }
 
 /* Mobile grande: 3 colunas */
 @media (max-width: 600px) {
-  .slider { grid-template-columns: repeat(3, 1fr); }
+  :root { --cols: 3; }
   .bill-title { font-size: 28px; }
   .bill-content { bottom: 22%; max-width: 90%; }
   .bill-btns .btn { padding: 8px 16px; font-size: 14px; }
   .bill-side { display: none; }
+  /* Hover simplificado em mobile: sem popup, sem trailer */
+  .card:hover { transform: scale(1.05); }
+  .card-info  { display: none; }
+  .slider-wrap { padding: 0 32px; }
 }
 
 /* Mobile pequeno: 2 colunas */
 @media (max-width: 400px) {
-  .slider { grid-template-columns: repeat(2, 1fr); }
+  :root { --cols: 2; }
 }

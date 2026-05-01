@@ -1,11 +1,10 @@
 /* ═══════════════════════════════════════════════════════════
-   NETFLIX CLONE — script.js
-   Organização:
+   NETFLIX CLONE — script.js (v3 — Infinite Slider + Hover Premium)
    1. Configurações e estado global
    2. Utilitários
    3. API TMDB
-   4. Billboard (hero + vídeo autoplay)
-   5. Cards e fileiras
+   4. Billboard
+   5. Cards e fileiras  ← refatorado
    6. Busca dinâmica
    7. Navbar scroll
    8. Inicialização
@@ -14,19 +13,16 @@
 
 /* ── 1. CONFIGURAÇÕES E ESTADO GLOBAL ── */
 
-const IMG_BASE   = 'https://image.tmdb.org/t/p/';
-const IMG_W500   = IMG_BASE + 'w500';
-const IMG_ORIG   = IMG_BASE + 'original';
+const IMG_BASE = 'https://image.tmdb.org/t/p/';
+const IMG_W500 = IMG_BASE + 'w500';
+const IMG_ORIG = IMG_BASE + 'original';
 
-const API_KEY = 'db36709836da3a30746262b6fc1e7743'; // chave fixa TMDB
-let isMuted = true; // billboard começa mutado
+const API_KEY = 'db36709836da3a30746262b6fc1e7743';
+let isMuted = true;
 
 
 /* ── 2. UTILITÁRIOS ── */
 
-/**
- * Exibe um toast (mensagem flutuante) por 2.5 segundos
- */
 function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
@@ -34,67 +30,35 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
-/**
- * Retorna uma porcentagem de "relevância" aleatória (70–99%)
- * Simula o algoritmo de recomendação da Netflix
- */
-function randomMatch() {
-  return Math.floor(70 + Math.random() * 29);
-}
+function randomMatch() { return Math.floor(70 + Math.random() * 29); }
+function extractYear(d) { return d ? d.slice(0, 4) : ''; }
 
-/**
- * Extrai o ano de uma data no formato "YYYY-MM-DD"
- */
-function extractYear(dateStr) {
-  return dateStr ? dateStr.slice(0, 4) : '';
+/** Lê --cols do breakpoint CSS ativo. */
+function getCols() {
+  return parseInt(
+    getComputedStyle(document.documentElement).getPropertyValue('--cols').trim()
+  ) || 6;
 }
 
 
 /* ── 3. API TMDB ── */
 
-/**
- * Faz uma requisição à API do TMDB
- * @param {string} path - Endpoint + parâmetros (sem api_key)
- * @returns {Promise<Object>} - JSON da resposta
- */
 async function tmdb(path) {
-  const url = `https://api.themoviedb.org/3${path}&api_key=${API_KEY}&language=pt-BR`;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Erro TMDB: ${response.status}`);
-  return response.json();
+  const res = await fetch(
+    `https://api.themoviedb.org/3${path}&api_key=${API_KEY}&language=pt-BR`
+  );
+  if (!res.ok) throw new Error(`TMDB ${res.status}`);
+  return res.json();
 }
 
-/**
- * Busca a key do trailer no YouTube para um filme ou série
- * @param {number} id   - ID do filme/série no TMDB
- * @param {string} type - 'movie' ou 'tv'
- * @returns {Promise<string|null>} - YouTube video key ou null
- */
 async function getTrailerKey(id, type = 'movie') {
   try {
-    const data = await tmdb(`/${type}/${id}/videos?`);
-
-    // Melhoria 2 — Filtro anti-erro:
-    // Só aceita vídeos com type === 'Trailer' E site === 'YouTube' E key válida.
-    // Evita teasers, clipes ou vídeos de outras plataformas que geram
-    // o erro de "ID de reprodução inválido" no YouTube embed.
-    const trailer = data.results.find(
-      v => v.type === 'Trailer' && v.site === 'YouTube' && v.key
-    );
-
-    // Sem trailer oficial → retorna null.
-    // O poster (fallback visual) cobre esse caso — sem vídeos genéricos.
-    return trailer ? trailer.key : null;
-  } catch {
-    return null;
-  }
+    const { results } = await tmdb(`/${type}/${id}/videos?`);
+    const t = results.find(v => v.type === 'Trailer' && v.site === 'YouTube' && v.key);
+    return t ? t.key : null;
+  } catch { return null; }
 }
 
-/**
- * Busca filmes/séries por texto (usada no campo de busca)
- * @param {string} query - Texto digitado pelo usuário
- * @returns {Promise<Array>} - Lista de resultados
- */
 async function searchMovies(query) {
   const data = await tmdb(`/search/multi?query=${encodeURIComponent(query)}&`);
   return data.results || [];
@@ -103,239 +67,189 @@ async function searchMovies(query) {
 
 /* ── 4. BILLBOARD ── */
 
-/**
- * Carrega o destaque principal (Billboard / Hero)
- * Seleciona um item aleatório entre os 5 primeiros do trending
- * e tenta carregar o trailer via YouTube IFrame
- */
 async function loadBillboard(items) {
-  const item = items[Math.floor(Math.random() * Math.min(5, items.length))];
-  const type = item.media_type || 'movie';
-
-  // Preenche o poster (imagem estática de fundo)
-  document.getElementById('billPoster').style.backgroundImage =
-    `url(${IMG_ORIG}${item.backdrop_path})`;
-
-  // Preenche os textos
-  document.getElementById('billTitle').textContent  = item.title || item.name || '';
-  document.getElementById('billDesc').textContent   = item.overview || '';
-  document.getElementById('billMatch').textContent  = `${randomMatch()}% relevante`;
-  document.getElementById('billYear').textContent   = extractYear(item.release_date || item.first_air_date);
-  document.getElementById('billAge').textContent    = item.adult ? '18+' : '14+';
-
+  const item   = items[Math.floor(Math.random() * Math.min(5, items.length))];
+  const type   = item.media_type || 'movie';
   const poster = document.getElementById('billPoster');
   const iframe = document.getElementById('billIframe');
 
-  // Garante que o poster começa visível e o iframe escondido
+  poster.style.backgroundImage = `url(${IMG_ORIG}${item.backdrop_path})`;
+  document.getElementById('billTitle').textContent = item.title || item.name || '';
+  document.getElementById('billDesc').textContent  = item.overview || '';
+  document.getElementById('billMatch').textContent = `${randomMatch()}% relevante`;
+  document.getElementById('billYear').textContent  = extractYear(item.release_date || item.first_air_date);
+  document.getElementById('billAge').textContent   = item.adult ? '18+' : '14+';
+
   poster.style.opacity = '1';
   iframe.classList.remove('visible');
   iframe.src = '';
 
-  // Busca o trailer — se não houver, mantém apenas o poster (fallback)
   const key = await getTrailerKey(item.id, type);
-  if (!key) return; // Melhoria 3 implícita: sem key, sem tentativa de vídeo
+  if (!key) return;
 
-  /*
-    YouTube Embed com parâmetros:
-    - autoplay=1       → inicia automaticamente
-    - mute=1           → começa mutado (obrigatório para autoplay no browser)
-    - controls=0       → esconde controles do YouTube
-    - showinfo=0       → esconde título
-    - rel=0            → não mostra vídeos relacionados
-    - modestbranding=1 → logo menor do YouTube
-    - loop=1           → repete o vídeo
-    - playlist=KEY     → necessário para o loop funcionar
-    - enablejsapi=1    → habilita controle via postMessage (mute/unmute)
-  */
-  // Melhoria 1 — parâmetro origin: identifica o domínio para o YouTube,
-  // eliminando o erro "Playback ID" que ocorre sem essa informação.
   const origin = encodeURIComponent(window.location.origin);
+  iframe.src = `https://www.youtube.com/embed/${key}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&loop=1&playlist=${key}&enablejsapi=1&origin=${origin}`;
 
-  iframe.src = [
-    `https://www.youtube.com/embed/${key}`,
-    `?autoplay=1`,
-    `&mute=1`,
-    `&controls=0`,
-    `&showinfo=0`,
-    `&rel=0`,
-    `&modestbranding=1`,
-    `&loop=1`,
-    `&playlist=${key}`,   // obrigatório para loop funcionar
-    `&enablejsapi=1`,     // habilita postMessage (mute/unmute)
-    `&origin=${origin}`,  // Melhoria 1: corrige erro de ID de reprodução
-  ].join('');
-
-  // Melhoria 3 — Sistema de fallback (Plano B):
-  // Função reutilizável que descarta o iframe e restaura o poster
-  function activatePosterFallback(reason) {
-    console.warn(`Billboard fallback ativado: ${reason}`);
-    clearTimeout(safetyTimeout);
-    iframe.src = '';                 // interrompe carregamento/reprodução
+  function fallback(reason) {
+    console.warn('Billboard fallback:', reason);
+    clearTimeout(safety);
+    iframe.src = '';
     iframe.classList.remove('visible');
-    poster.style.opacity = '1';      // poster volta a ser visível
+    poster.style.opacity = '1';
   }
 
-  // Plano B — Timeout: se em 7s o vídeo não estiver visível, ativa fallback
-  let videoLoaded = false;
-  const safetyTimeout = setTimeout(() => {
-    if (!videoLoaded) activatePosterFallback('timeout de 7s excedido');
-  }, 7000);
+  let loaded = false;
+  const safety = setTimeout(() => { if (!loaded) fallback('timeout 7s'); }, 7000);
 
-  // Plano B — Evento load: só confirma vídeo após +2s (YouTube precisa inicializar)
   iframe.addEventListener('load', () => {
     setTimeout(() => {
-      videoLoaded = true;
-      clearTimeout(safetyTimeout);
+      loaded = true;
+      clearTimeout(safety);
       iframe.classList.add('visible');
-      poster.style.opacity = '0'; // transição suave via CSS (transition: opacity 1.5s)
+      poster.style.opacity = '0';
     }, 2000);
   }, { once: true });
 
-  // Plano B — Evento error: captura falhas explícitas do navegador no iframe
-  iframe.addEventListener('error', () => {
-    activatePosterFallback('erro explícito no iframe');
-  }, { once: true });
+  iframe.addEventListener('error', () => fallback('iframe error'), { once: true });
 
-  // Plano B — YouTube postMessage: escuta erros enviados pela API do YouTube
-  // O player envia { event: 'onError', info: código } via postMessage
-  window.addEventListener('message', (event) => {
-    if (!event.origin.includes('youtube.com')) return;
+  window.addEventListener('message', e => {
+    if (!e.origin.includes('youtube.com')) return;
     try {
-      const msg = JSON.parse(event.data);
-      if (msg.event === 'onError') {
-        activatePosterFallback(`YouTube onError: código ${msg.info}`);
-      }
-    } catch { /* mensagem não é JSON — ignora */ }
+      const m = JSON.parse(e.data);
+      if (m.event === 'onError') fallback(`YT error ${m.info}`);
+    } catch { /* noop */ }
   });
 }
 
-/**
- * Alterna mute/unmute do vídeo da billboard
- * Usa a YouTube IFrame API via postMessage
- */
 function toggleMute() {
   isMuted = !isMuted;
   document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
-
-  const iframe = document.getElementById('billIframe');
-  iframe.contentWindow.postMessage(
-    JSON.stringify({ event: 'command', func: isMuted ? 'mute' : 'unMute' }),
-    '*'
+  document.getElementById('billIframe').contentWindow?.postMessage(
+    JSON.stringify({ event: 'command', func: isMuted ? 'mute' : 'unMute' }), '*'
   );
 }
 
 
-/* ── 5. CARDS E FILEIRAS ── */
+/* ══════════════════════════════════════════════════════════
+   ── 5. CARDS E FILEIRAS (REFATORADO v3) ──
+
+   INFINITE SLIDER — "clone sandwich"
+   ───────────────────────────────────
+   [ clones do final ] [ cards originais ] [ clones do início ]
+
+   O slider começa posicionado sobre os originais.
+   Ao atingir um ghost e a transição terminar, desabilitamos
+   a CSS transition e teleportamos para o original — invisível.
+
+   HOVER EXPANSION
+   ───────────────
+   • data-pos (first | last | mid) → transform-origin no CSS.
+   • z-index do .row elevado no mouseenter, restaurado com delay.
+   • Mini-trailer: 500ms de delay + guard :hover.
+══════════════════════════════════════════════════════════ */
 
 /**
- * Cria um card de filme/série com:
- * - Thumbnail 16:9
- * - Mini-trailer no hover (carregado com delay de 900ms)
- * - Painel de detalhes com botões de ação
+ * createCard — Cria o elemento .card completo.
  */
 function createCard(item, type = 'movie') {
   if (!item.backdrop_path) return null;
 
-  const card      = document.createElement('div');
-  card.className  = 'card';
+  const card     = document.createElement('div');
+  card.className = 'card';
 
-  const title  = item.title || item.name || '';
-  const year   = extractYear(item.release_date || item.first_air_date);
-  const match  = randomMatch();
-  const genres = ['Ação', 'Drama', 'Comédia', 'Thriller', 'Ficção Científica'];
-  const genreLabel = genres.slice(0, 2 + Math.floor(Math.random() * 2)).join(' • ');
+  const title      = item.title || item.name || '';
+  const year       = extractYear(item.release_date || item.first_air_date);
+  const match      = randomMatch();
+  const GENRES     = ['Ação', 'Drama', 'Comédia', 'Thriller', 'Ficção Científica', 'Romance'];
+  const genreLabel = GENRES.slice(0, 2 + Math.floor(Math.random() * 2)).join(' • ');
 
   card.innerHTML = `
-    <img
-      class="card-thumb"
-      src="${IMG_W500}${item.backdrop_path}"
-      alt="${title}"
-      loading="lazy"
-    >
+    <img class="card-thumb" src="${IMG_W500}${item.backdrop_path}" alt="${title}" loading="lazy">
     <div class="card-info">
       <div class="card-actions">
-        <button class="icon-btn play">▶</button>
-        <button class="icon-btn" data-action="list">+</button>
-        <button class="icon-btn" data-action="like">👍</button>
-        <button class="icon-btn ml" data-action="more">⌄</button>
+        <button class="icon-btn play"                  title="Assistir">▶</button>
+        <button class="icon-btn" data-action="list"    title="Adicionar">+</button>
+        <button class="icon-btn" data-action="like"    title="Avaliar">👍</button>
+        <button class="icon-btn ml" data-action="more" title="Mais informações">⌄</button>
       </div>
       <div class="card-title">${title}</div>
       <div class="card-badges">
         <span class="badge-match">${match}% relevante</span>
         <span class="badge">14+</span>
         <span class="badge">HD</span>
-        ${year ? `<span style="font-size:10px;color:var(--gray)">${year}</span>` : ''}
+        ${year ? `<span class="badge-year">${year}</span>` : ''}
       </div>
       <div class="card-genres">${genreLabel}</div>
     </div>
   `;
 
-  // Ações dos botões do card
-  card.querySelector('[data-action="list"]').addEventListener('click', (e) => {
-    e.stopPropagation();
-    showToast(`"${title}" adicionado à sua lista!`);
+  card.querySelector('[data-action="list"]').addEventListener('click', e => {
+    e.stopPropagation(); showToast(`"${title}" adicionado à sua lista!`);
   });
-  card.querySelector('[data-action="like"]').addEventListener('click', (e) => {
-    e.stopPropagation();
-    showToast('Avaliado! Obrigado.');
+  card.querySelector('[data-action="like"]').addEventListener('click', e => {
+    e.stopPropagation(); showToast('Avaliado! Obrigado.');
   });
-  card.querySelector('[data-action="more"]').addEventListener('click', (e) => {
-    e.stopPropagation();
-    showToast('Mais opções em breve...');
+  card.querySelector('[data-action="more"]').addEventListener('click', e => {
+    e.stopPropagation(); showToast('Mais opções em breve…');
   });
 
-  // Melhoria 3: mini-trailer no hover — só tenta se o TMDB tiver trailer
-  // Se getTrailerKey() retornar null, o card apenas faz zoom (via CSS) sem erros
+  /* — Hover: mini-trailer com delay de 500ms — */
   let videoIframe = null;
   let hoverTimer  = null;
+  let rowEl       = null;
+  let leaveTimer  = null;
 
-  card.addEventListener('mouseenter', async () => {
+  card.addEventListener('mouseenter', () => {
+    rowEl = card.closest('.row');
+    if (rowEl) { clearTimeout(leaveTimer); rowEl.style.zIndex = '30'; }
+
     hoverTimer = setTimeout(async () => {
-      // Evita criar o iframe duas vezes
-      if (videoIframe) return;
+      if (!card.matches(':hover')) return;
+
+      /* Re-hover: iframe já existe, só mostra */
+      if (videoIframe) { videoIframe.style.opacity = '1'; return; }
 
       const key = await getTrailerKey(item.id, type);
+      if (!key || !card.matches(':hover')) return;
 
-      // Sem trailer no TMDB → apenas o zoom do CSS continua funcionando,
-      // nenhum iframe é criado e nenhum erro é disparado
-      if (!key) return;
-
-      videoIframe             = document.createElement('iframe');
-      videoIframe.className   = 'card-video';
-      videoIframe.frameBorder = '0';
-      videoIframe.allow       = 'autoplay; encrypted-media';
+      videoIframe           = document.createElement('iframe');
+      videoIframe.className = 'card-video';
+      videoIframe.setAttribute('frameborder', '0');
+      videoIframe.setAttribute('allow', 'autoplay; encrypted-media');
       videoIframe.src = `https://www.youtube.com/embed/${key}?autoplay=1&mute=1&controls=0&showinfo=0&rel=0&modestbranding=1&loop=1&playlist=${key}`;
 
-      // Listener de erro: se o YouTube bloquear, remove o iframe silenciosamente
       videoIframe.addEventListener('error', () => {
-        videoIframe.remove();
-        videoIframe = null;
+        videoIframe?.remove(); videoIframe = null;
       }, { once: true });
 
-      // Insere antes do painel de detalhes
       card.insertBefore(videoIframe, card.querySelector('.card-info'));
 
-      // Pequeno delay para a transição de opacidade funcionar
-      setTimeout(() => { if (videoIframe) videoIframe.style.opacity = '1'; }, 200);
-    }, 900);
+      /* Double rAF garante que o navegador pintou antes da transição de opacidade */
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (videoIframe) videoIframe.style.opacity = '1';
+      }));
+    }, 500);
   });
 
   card.addEventListener('mouseleave', () => {
     clearTimeout(hoverTimer);
     if (videoIframe) videoIframe.style.opacity = '0';
+    if (rowEl) {
+      leaveTimer = setTimeout(() => { if (rowEl) rowEl.style.zIndex = ''; rowEl = null; }, 400);
+    }
   });
 
   return card;
 }
 
+
 /**
- * Constrói uma fileira completa com título, slider e botões de navegação
+ * buildRow — Infinite Slider (clone sandwich)
  */
 function buildRow(title, items, type, container) {
   const row = document.createElement('div');
   row.className = 'row';
 
-  // Cabeçalho da fileira
   const header = document.createElement('div');
   header.className = 'row-header';
   header.innerHTML = `
@@ -344,83 +258,169 @@ function buildRow(title, items, type, container) {
   `;
   row.appendChild(header);
 
-  // Wrapper do slider
   const wrap = document.createElement('div');
   wrap.className = 'slider-wrap';
 
-  // Botões de navegação
   const btnL = document.createElement('button');
   btnL.className = 'arrow-btn arrow-left';
   btnL.innerHTML = '&#8249;';
+  btnL.setAttribute('aria-label', 'Anterior');
 
   const btnR = document.createElement('button');
   btnR.className = 'arrow-btn arrow-right';
   btnR.innerHTML = '&#8250;';
+  btnR.setAttribute('aria-label', 'Próximo');
 
-  // Grid dos cards
   const slider = document.createElement('div');
   slider.className = 'slider';
 
-  items
-    .filter(i => i.backdrop_path)
-    .forEach(item => {
-      const card = createCard(item, type);
-      if (card) slider.appendChild(card);
+  /* — Cards originais — */
+  const validItems = items.filter(i => i.backdrop_path);
+  const origCards  = validItems.map(i => createCard(i, type)).filter(Boolean);
+  if (!origCards.length) return;
+
+  /* — Clone sandwich —
+     Clonamos getCols() cards de cada ponta.
+     Usamos data-ghost para identificá-los no CSS (sem interatividade).
+  */
+  function buildClones() {
+    const n = getCols();
+    const endClones   = origCards.slice(-n).map(c => {
+      const cl = c.cloneNode(true); cl.dataset.ghost = 'end'; return cl;
     });
-
-  // Lógica de paginação do slider
-  let currentPage = 0;
-  const columnsPerPage = 6;
-
-  function totalPages() {
-    return Math.max(0, Math.ceil(slider.children.length / columnsPerPage) - 1);
+    const startClones = origCards.slice(0, n).map(c => {
+      const cl = c.cloneNode(true); cl.dataset.ghost = 'start'; return cl;
+    });
+    return { endClones, startClones, n };
   }
 
-  btnL.addEventListener('click', () => {
-    currentPage = Math.max(0, currentPage - 1);
-    slider.style.transform = `translateX(-${currentPage * 100}%)`;
+  /* Renderização inicial */
+  let { endClones, startClones } = buildClones();
+  endClones.forEach(c   => slider.appendChild(c));
+  origCards.forEach(c   => slider.appendChild(c));
+  startClones.forEach(c => slider.appendChild(c));
+
+  /* — Transform-origin dinâmico por posição na página — */
+  function updatePositionMarkers() {
+    const cols  = getCols();
+    const cards = [...slider.querySelectorAll('.card:not([data-ghost])')];
+    cards.forEach((c, i) => {
+      const pos = i % cols;
+      c.dataset.pos = pos === 0 ? 'first' : pos === cols - 1 ? 'last' : 'mid';
+    });
+  }
+  updatePositionMarkers();
+
+  /* ── PAGINAÇÃO INFINITA ── */
+  let currentPage = 0;
+  let isAnimating = false;
+
+  function cardStep() {
+    const c = slider.querySelector('.card');
+    return c ? c.getBoundingClientRect().width + 4 : 0; // 4 = gap
+  }
+
+  function maxPage() {
+    const cols = getCols();
+    return Math.max(0, Math.ceil((origCards.length - cols) / cols));
+  }
+
+  /**
+   * Posiciona o slider na página lógica desejada.
+   * O offset dos ghost-end é somado automaticamente.
+   */
+  function goToPage(page, animated = true) {
+    const step        = cardStep();
+    const cols        = getCols();
+    const ghostOffset = getCols() * step; // largura do bloco ghost-end
+
+    if (!animated) slider.style.transition = 'none';
+
+    const offset = ghostOffset + page * cols * step;
+    slider.style.transform = `translateX(-${offset}px)`;
+    currentPage = page;
+  }
+
+  /* Posicionamento inicial (sem animação) */
+  requestAnimationFrame(() => goToPage(0, false));
+
+  /* — "Teleporte" ao terminar a transição nos ghosts — */
+  slider.addEventListener('transitionend', e => {
+    if (e.propertyName !== 'transform') return;
+    isAnimating = false;
+
+    if (currentPage < 0) {
+      /* Chegou nos ghost-end → vai para o último grupo real */
+      goToPage(maxPage(), false);
+    } else if (currentPage > maxPage()) {
+      /* Chegou nos ghost-start → volta para o primeiro grupo real */
+      goToPage(0, false);
+    }
+
+    /* Força reflow antes de re-habilitar a transition */
+    slider.getBoundingClientRect();
+    slider.style.transition = '';
   });
 
-  btnR.addEventListener('click', () => {
-    currentPage = Math.min(totalPages(), currentPage + 1);
-    slider.style.transform = `translateX(-${currentPage * 100}%)`;
+  /* — Cliques nas setas — */
+  function navigate(delta) {
+    if (isAnimating) return;
+    isAnimating = true;
+    slider.style.transition = 'transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+    goToPage(currentPage + delta);
+  }
+
+  btnL.addEventListener('click', () => navigate(-1));
+  btnR.addEventListener('click', () => navigate(+1));
+
+  /* No loop infinito ambas as setas ficam sempre visíveis */
+  btnL.style.opacity = '1';
+  btnR.style.opacity = '1';
+
+  /* — ResizeObserver: recalcula ao mudar viewport — */
+  const ro = new ResizeObserver(() => {
+    updatePositionMarkers();
+    goToPage(currentPage, false);
+    applyClip();
   });
+  ro.observe(wrap);
+
+  /*
+    clip-path inset com Y negativo: clips ghost-cards horizontalmente
+    mas deixa o hover (scale + card-info) vazar verticalmente sem ser cortado.
+    -200px no eixo Y cobre: expansão do scale(1.5) ~65px + card-info ~100px.
+  */
+  function applyClip() {
+    wrap.style.clipPath = 'inset(-200px 48px -200px 48px)';
+  }
 
   wrap.appendChild(btnL);
   wrap.appendChild(slider);
   wrap.appendChild(btnR);
   row.appendChild(wrap);
   container.appendChild(row);
+
+  requestAnimationFrame(applyClip);
 }
 
-/**
- * Adiciona fileiras de skeleton (placeholder animado) enquanto carrega
- */
+
+/** Skeleton rows enquanto a API carrega. */
 function addSkeletonRows(container) {
   const labels = [
-    '🔥 Em Alta no Brasil',
-    '🎬 Filmes Populares',
-    '📺 Séries Premiadas',
-    '💥 Ação & Aventura',
-    '😱 Terror',
-    '😂 Comédias',
+    '🔥 Em Alta no Brasil', '🎬 Filmes Populares', '📺 Séries Premiadas',
+    '💥 Ação & Aventura',   '😱 Terror',           '😂 Comédias',
   ];
-
   labels.forEach(label => {
-    const row    = document.createElement('div');
+    const row = document.createElement('div');
     row.className = 'row';
     row.innerHTML = `<div class="row-header"><span class="row-title">${label}</span></div>`;
-
-    const slider    = document.createElement('div');
-    slider.className = 'slider';
-
+    const sl = document.createElement('div');
+    sl.className = 'slider';
+    sl.style.padding = '40px 4%';
     for (let i = 0; i < 6; i++) {
-      const skeleton    = document.createElement('div');
-      skeleton.className = 'skeleton';
-      slider.appendChild(skeleton);
+      const sk = document.createElement('div'); sk.className = 'skeleton'; sl.appendChild(sk);
     }
-
-    row.appendChild(slider);
+    row.appendChild(sl);
     container.appendChild(row);
   });
 }
@@ -430,14 +430,10 @@ function addSkeletonRows(container) {
 
 let searchDebounce = null;
 
-/**
- * Renderiza os resultados da busca em um grid separado
- */
 function renderSearchResults(results) {
-  const section  = document.getElementById('searchResults');
-  const grid     = document.getElementById('searchGrid');
-  const rowsEl   = document.getElementById('rows');
-
+  const section = document.getElementById('searchResults');
+  const grid    = document.getElementById('searchGrid');
+  const rowsEl  = document.getElementById('rows');
   grid.innerHTML = '';
 
   if (!results.length) {
@@ -454,65 +450,39 @@ function renderSearchResults(results) {
     .filter(r => r.backdrop_path || r.poster_path)
     .slice(0, 24)
     .forEach(item => {
-      const card      = document.createElement('div');
-      card.className  = 'search-card';
-      const img       = item.backdrop_path
+      const card = document.createElement('div');
+      card.className = 'search-card';
+      const src  = item.backdrop_path
         ? `${IMG_W500}${item.backdrop_path}`
         : `${IMG_BASE}w342${item.poster_path}`;
-      const title     = item.title || item.name || '';
-
-      card.innerHTML = `
-        <img src="${img}" alt="${title}" loading="lazy">
-        <div class="search-card-title">${title}</div>
-      `;
+      const title = item.title || item.name || '';
+      card.innerHTML = `<img src="${src}" alt="${title}" loading="lazy"><div class="search-card-title">${title}</div>`;
       grid.appendChild(card);
     });
 }
 
-/**
- * Inicializa o campo de busca com debounce de 500ms
- * (evita requisição a cada tecla digitada)
- */
 function initSearch() {
   const toggle    = document.getElementById('searchToggle');
   const searchBox = document.getElementById('searchBox');
   const input     = document.getElementById('searchInput');
 
-  // Abre/fecha o campo de busca
   toggle.addEventListener('click', () => {
     searchBox.classList.toggle('open');
-    if (searchBox.classList.contains('open')) {
-      input.focus();
-    } else {
-      input.value = '';
-      clearSearch();
-    }
+    if (searchBox.classList.contains('open')) input.focus();
+    else { input.value = ''; clearSearch(); }
   });
 
-  // Busca com debounce
   input.addEventListener('input', () => {
     clearTimeout(searchDebounce);
-    const query = input.value.trim();
-
-    if (!query) {
-      clearSearch();
-      return;
-    }
-
+    const q = input.value.trim();
+    if (!q) { clearSearch(); return; }
     searchDebounce = setTimeout(async () => {
-      try {
-        const results = await searchMovies(query);
-        renderSearchResults(results);
-      } catch {
-        showToast('Erro ao buscar. Tente novamente.');
-      }
+      try { renderSearchResults(await searchMovies(q)); }
+      catch { showToast('Erro ao buscar. Tente novamente.'); }
     }, 500);
   });
 }
 
-/**
- * Limpa os resultados e restaura as fileiras normais
- */
 function clearSearch() {
   document.getElementById('searchResults').classList.add('hidden');
   document.getElementById('searchGrid').innerHTML = '';
@@ -522,35 +492,21 @@ function clearSearch() {
 
 /* ── 7. NAVBAR SCROLL ── */
 
-/**
- * Adiciona/remove a classe 'solid' na navbar conforme o scroll
- * A classe muda o fundo de gradiente para cor sólida (#141414)
- */
 function initNavbarScroll() {
   window.addEventListener('scroll', () => {
-    const navbar = document.getElementById('navbar');
-    navbar.classList.toggle('solid', window.scrollY > 60);
-  }, { passive: true }); // passive: true melhora performance no scroll
+    document.getElementById('navbar').classList.toggle('solid', window.scrollY > 60);
+  }, { passive: true });
 }
 
 
 /* ── 8. INICIALIZAÇÃO ── */
 
-/**
- * Função principal — chamada quando o usuário clica em "Entrar"
- * com a API Key
- */
 async function init() {
-  // Esconde o overlay imediatamente — API_KEY já está definida no topo
   document.getElementById('apiOverlay').style.display = 'none';
-
   const rowsEl = document.getElementById('rows');
-
-  // Mostra skeletons enquanto carrega
   addSkeletonRows(rowsEl);
 
   try {
-    // Faz todas as requisições em paralelo (mais rápido)
     const [trending, popular, topTV, action, horror, comedy] = await Promise.all([
       tmdb('/trending/all/week?'),
       tmdb('/movie/popular?'),
@@ -560,10 +516,8 @@ async function init() {
       tmdb('/discover/movie?with_genres=35&sort_by=popularity.desc&'),
     ]);
 
-    // Carrega o billboard com os trending
     await loadBillboard(trending.results);
 
-    // Limpa os skeletons e monta as fileiras reais
     rowsEl.innerHTML = '';
     buildRow('🔥 Em Alta no Brasil', trending.results, 'movie',  rowsEl);
     buildRow('🎬 Filmes Populares',  popular.results,  'movie',  rowsEl);
@@ -572,22 +526,16 @@ async function init() {
     buildRow('😱 Terror',            horror.results,   'movie',  rowsEl);
     buildRow('😂 Comédias',          comedy.results,   'movie',  rowsEl);
 
-  } catch (error) {
-    console.error(error);
-    showToast('API Key inválida. Verifique e tente novamente.');
+  } catch (err) {
+    console.error(err);
+    showToast('Erro ao carregar. Verifique sua API Key.');
     rowsEl.innerHTML = '';
     document.getElementById('apiOverlay').style.display = 'flex';
   }
 }
 
 /* ── EVENTOS GLOBAIS ── */
-
-// Botão de mute da billboard
 document.getElementById('muteBtn').addEventListener('click', toggleMute);
-
-// Inicializa navbar e busca
 initNavbarScroll();
 initSearch();
-
-// 4. Dispara init() automaticamente quando o DOM estiver pronto
 window.addEventListener('DOMContentLoaded', init);

@@ -1,8 +1,9 @@
 /*
-   NETFLIX CLONE — style.css (v3 — Hover Premium + Infinite Slider)
+   NETFLIX CLONE — style.css
    1. Variáveis globais
    2. Reset & base
    3. Navbar
+   3b. Navbar - Dropdowns (Notificações e Perfil)
    4. Billboard
    5. Fileiras e slider
    6. Cards 16:9 — hover premium  ← refatorado
@@ -87,11 +88,7 @@ img { display: block; max-width: 100%; }
 .search-input::placeholder { color: var(--gray); }
 .search-box.open .search-input { width: 220px; padding: 0 8px; }
 
-/* ────────────────────────────────────────────────
-   3b. NAVBAR — DROPDOWNS (Notificações + Perfil)
-   ──────────────────────────────────────────────── */
-
-/* Container pai — posicionamento relativo p/ o painel absoluto */
+/* 3b. NAVBAR — DROPDOWNS (Notificações + Perfil)*/
 .nav-dropdown {
   position: relative;
   display: flex;
@@ -445,7 +442,7 @@ img { display: block; max-width: 100%; }
 
 .row {
   width: 100%;
-  margin-bottom: 2vw;  /* Espaço vertical entre as categorias */
+  margin-bottom: 3vw;  /* Espaço vertical entre as categorias */
   position: relative;
   isolation: isolate;
   overflow: visible;
@@ -455,8 +452,8 @@ img { display: block; max-width: 100%; }
   display: flex; 
   align-items: flex-end; 
   gap: 10px;
-  margin-bottom: 0.8vw; /* Distância precisa entre título e cards */
-  padding: 0 4vw;       /* Alinha o título com a Logo da Navbar */
+  margin-bottom: 0.8vw; 
+  padding: 0 4vw;       
 }
 
 .row-title { 
@@ -541,17 +538,9 @@ img { display: block; max-width: 100%; }
   border-radius: var(--card-radius);
   cursor: pointer;
   z-index: 1;
-
-  /*
-    transition delay de 200ms no mouseenter:
-    evita acionar o efeito em mouse-overs rápidos (passa pelo card sem intenção).
-    No mouseleave (saída), sem delay para o retorno ser imediato.
-  */
   transition:
-    transform 0.3s var(--ease-netflix) 0.2s,
-    z-index 0s 0.5s;               /* z-index volta APÓS animação de saída */
-
-  transform-origin: center center; /* padrão — sobrescrito por data-pos */
+   transition: transform 0.3s ease, z-index 0s 0.3s;               
+  transform-origin: center center; 
 }
 
 /* ── Transform-origin dinâmico via data-pos ── */
@@ -561,8 +550,9 @@ img { display: block; max-width: 100%; }
 
 /* ── Estado de hover ── */
 .card:hover {
-  transform: scale(1.5);
+  transform: scale(1.4);
   z-index: 9999;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.6);
   transition:
     transform 0.3s var(--ease-netflix) 0.2s,
     z-index 0s 0.2s;
@@ -637,18 +627,7 @@ img { display: block; max-width: 100%; }
   z-index: 2;
 }
 
-/* ══════════════════════════════════════════════════════════
-   CARD-INFO — painel sólido unido à base do card
-   ──────────────────────────────────────────────────────────
-   • position: absolute + top: 100% → fica imediatamente abaixo
-     do card sem empurrar o layout.
-   • scaleY(0 → 1) com transform-origin: top → expande de cima
-     para baixo, "nascendo" da borda inferior do card.
-   • O fundo #181818 é contínuo com a thumb (sem gap visível),
-     criando a ilusão de um único bloco expandido.
-   • box-shadow cria a sombra de profundidade Netflix-like.
-   • z-index: 51 → acima do próprio card (50) durante o hover.
-══════════════════════════════════════════════════════════ */
+/* CARD-INFO — painel sólido unido à base do card */
 .card-info {
   position: absolute;
   top: 100%;

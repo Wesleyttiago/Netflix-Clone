@@ -4,7 +4,7 @@
    2. Utilitários
    3. API TMDB
    4. Billboard
-   5. Cards e fileiras  ← refatorado
+   5. Cards e fileiras
    6. Busca dinâmica
    7. Navbar scroll
    8. Inicialização
@@ -129,28 +129,7 @@ function toggleMute() {
   );
 }
 
-
-/* ══════════════════════════════════════════════════════════
-   ── 5. CARDS E FILEIRAS (REFATORADO v3) ──
-
-   INFINITE SLIDER — "clone sandwich"
-   ───────────────────────────────────
-   [ clones do final ] [ cards originais ] [ clones do início ]
-
-   O slider começa posicionado sobre os originais.
-   Ao atingir um ghost e a transição terminar, desabilitamos
-   a CSS transition e teleportamos para o original — invisível.
-
-   HOVER EXPANSION
-   ───────────────
-   • data-pos (first | last | mid) → transform-origin no CSS.
-   • z-index do .row elevado no mouseenter, restaurado com delay.
-   • Mini-trailer: 500ms de delay + guard :hover.
-══════════════════════════════════════════════════════════ */
-
-/**
- * createCard — Cria o elemento .card completo.
- */
+/*5. CARDS E FILEIRAS */
 function createCard(item, type = 'movie', options = {}) {
   if (!item.backdrop_path) return null;
 
@@ -290,10 +269,7 @@ function buildRow(title, items, type, container, options = {}) {
   })).filter(Boolean);
   if (!origCards.length) return;
 
-  /* — Clone sandwich —
-     Clonamos getCols() cards de cada ponta.
-     Usamos data-ghost para identificá-los no CSS (sem interatividade).
-  */
+  /* — Clone sandwich —*/
   function buildClones() {
     const n = getCols();
     const endClones   = origCards.slice(-n).map(c => {
@@ -418,8 +394,8 @@ function buildRow(title, items, type, container, options = {}) {
 /** Skeleton rows enquanto a API carrega. */
 function addSkeletonRows(container) {
   const labels = [
-    '🔥 Em Alta no Brasil', '🎬 Filmes Populares', '📺 Séries Premiadas',
-    '💥 Ação & Aventura',   '😱 Terror',           '😂 Comédias',
+    'Em Alta no Brasil', 'Filmes Populares', 'Séries Premiadas',
+    'Ação & Aventura',   'Terror',           'Comédias',
   ];
   labels.forEach(label => {
     const row = document.createElement('div');
@@ -427,7 +403,7 @@ function addSkeletonRows(container) {
     row.innerHTML = `<div class="row-header"><span class="row-title">${label}</span></div>`;
     const sl = document.createElement('div');
     sl.className = 'slider';
-    sl.style.padding = '40px 4%';
+    sl.style.padding = '40px 4vw';  /* Alinhado com .slider-wrap padding */
     for (let i = 0; i < 6; i++) {
       const sk = document.createElement('div'); sk.className = 'skeleton'; sl.appendChild(sk);
     }
@@ -550,16 +526,16 @@ async function init() {
     await loadBillboard(trending.results);
 
     rowsEl.innerHTML = '';
-    buildRow('🔥 Em Alta no Brasil', trending.results, 'movie',  rowsEl, { top10: true, newRelease: true });
-    buildRow('▶ Continuar assistindo como Wesley', popular.results.slice(0, 10), 'movie', rowsEl, { continueWatching: true });
-    buildRow('🎬 Filmes Populares',  popular.results,  'movie',  rowsEl);
-    buildRow('📺 Séries Premiadas',  topTV.results,    'tv',     rowsEl);
-    buildRow('💥 Ação & Aventura',   action.results,   'movie',  rowsEl);
-    buildRow('😱 Terror',            horror.results,   'movie',  rowsEl);
-    buildRow('😂 Comédias',          comedy.results,   'movie',  rowsEl);
-    buildRow('🎭 Animes',            animes.results,   'movie',  rowsEl);
-    buildRow('🎭 Dramas',            dramas.results,   'movie',  rowsEl);
-    buildRow('📚 Documentários',     documentarios.results, 'movie', rowsEl);
+    buildRow('Em Alta no Brasil', trending.results, 'movie',  rowsEl, { top10: true, newRelease: true });
+    buildRow('Continuar assistindo como Wesley', popular.results.slice(0, 10), 'movie', rowsEl, { continueWatching: true });
+    buildRow('Filmes Populares',  popular.results,  'movie',  rowsEl);
+    buildRow('Séries Premiadas',  topTV.results,    'tv',     rowsEl);
+    buildRow('Ação & Aventura',   action.results,   'movie',  rowsEl);
+    buildRow('Terror',            horror.results,   'movie',  rowsEl);
+    buildRow('Comédias',          comedy.results,   'movie',  rowsEl);
+    buildRow('Animes',            animes.results,   'movie',  rowsEl);
+    buildRow('Dramas',            dramas.results,   'movie',  rowsEl);
+    buildRow('Documentários',     documentarios.results, 'movie', rowsEl);
 
   } catch (err) {
     console.error(err);

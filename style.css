@@ -214,7 +214,7 @@ img { display: block; max-width: 100%; }
   height: 75px;
   object-fit: cover;
   border-radius: 4px;
-  flex-shrink: 0;
+  flex-shrink: 0;  /* Garante que a imagem não fique espremida */
 }
 .notification-content {
   flex: 1;
@@ -434,13 +434,12 @@ img { display: block; max-width: 100%; }
 /* ── 5. FILEIRAS E SLIDER ── */
 .rows {
   width: 100%;
-  padding: 0 4% 80px;
+  padding: 0 4vw 80px;
   /*
-    margin-top negativo puxa as fileiras para CIMA, sobrepondo o billboard.
-    -280px faz as thumbs subirem ainda mais sobre o hero.
-    Ajuste este valor se o billboard mudar de altura.
+    margin-top negativo agressivo puxa as fileiras CIMA, sobrepondo o billboard.
+    -220px garante densidade máxima entre billboard e primeira fileira.
   */
-  margin-top: -280px;
+  margin-top: -220px;
   position: relative;
   z-index: 10;
   overflow: visible;
@@ -449,7 +448,7 @@ img { display: block; max-width: 100%; }
 
 .row {
   width: 100%;
-  margin-bottom: 1vw;
+  margin-bottom: 3.5vw;  /* Compactação vertical: 3.5vw entre fileiras */
   position: relative;
   isolation: isolate;
   overflow: visible;
@@ -457,7 +456,8 @@ img { display: block; max-width: 100%; }
 
 .row-header {
   display: flex; align-items: center; gap: 10px;
-  margin-bottom: 0.5em; padding: 0 4%;
+  margin-bottom: 0.5vw;  /* Distância mínima entre título e filmes */
+  padding: 0 4vw;
 }
 .row-title { font-size: 1.4vw; font-weight: 700; color: #e5e5e5; }
 .row-explore {
@@ -467,16 +467,16 @@ img { display: block; max-width: 100%; }
 .row:hover .row-explore { opacity: 1; }
 
 /*
-  SLIDER-WRAP
-  overflow-x: hidden  → esconde ghost-cards nas bordas horizontais.
-  overflow-y: visible → permite que o card expandido (scale 1.5) e o
-                        card-info flutuem para cima/baixo sem ser cortados.
+  SLIDER-WRAP — Full-width com expansão de hover preservada
+  overflow: visible → permite card expandido (scale 1.5) + card-info
+  clip-path: inset(-100px 0px -100px 0px) → clipa lateral (mantém horizontalidade)
+  sem cortar vertical (permite hover flutuante)
 */
 .slider-wrap {
   position: relative;
   overflow: visible;
-  padding: 0 16px;
-  clip-path: inset(-200px 0px -200px 0px);
+  padding: 0 4vw;  /* Respira nas laterais, mas encostar próximo às bordas */
+  clip-path: inset(-100px 0px -100px 0px);
 }
 
 /*
@@ -489,14 +489,9 @@ img { display: block; max-width: 100%; }
 */
 .slider {
   display: flex;
-  gap: 4px;
+  gap: 4px;  /* Gap mínimo entre cards */
   padding: 40px 0 110px;      /* top: espaço p/ escalar; bottom: espaço p/ card-info */
   will-change: transform;
-}
-
-.row-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 10px; padding: 0 4%;
 }
 
 /* Ghost cards (clones) — nunca devem receber hover */
@@ -624,11 +619,11 @@ img { display: block; max-width: 100%; }
 .watch-progress {
   position: absolute;
   left: 0; right: 0; bottom: 0;
-  height: 3px;
+  height: 4px;  /* Barra mais visível */
   background: rgba(255,255,255,0.12);
   border-radius: 0 0 var(--card-radius) var(--card-radius);
   overflow: hidden;
-  z-index: 4;
+  z-index: 10;  /* Sobre o card thumbnail */
 }
 .watch-progress div {
   width: 58%;
